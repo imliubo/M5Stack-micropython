@@ -42,3 +42,7 @@ user.props
 # Generated rst files
 ######################
 genrst/
+
+ports/esp32/makefile
+
+.vscode/
