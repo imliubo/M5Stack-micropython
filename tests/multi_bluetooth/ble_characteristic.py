@@ -54,15 +54,15 @@ def irq(event, data):
             print("_IRQ_GATTC_CHARACTERISTIC_RESULT", data[-1])
             value_handle = data[2]
     elif event == _IRQ_GATTC_READ_RESULT:
-        print("_IRQ_GATTC_READ_RESULT", data[-1])
+        print("_IRQ_GATTC_READ_RESULT", bytes(data[-1]))
     elif event == _IRQ_GATTC_READ_DONE:
         print("_IRQ_GATTC_READ_DONE", data[-1])
     elif event == _IRQ_GATTC_WRITE_DONE:
         print("_IRQ_GATTC_WRITE_DONE", data[-1])
     elif event == _IRQ_GATTC_NOTIFY:
-        print("_IRQ_GATTC_NOTIFY", data[-1])
+        print("_IRQ_GATTC_NOTIFY", bytes(data[-1]))
     elif event == _IRQ_GATTC_INDICATE:
-        print("_IRQ_GATTC_INDICATE", data[-1])
+        print("_IRQ_GATTC_INDICATE", bytes(data[-1]))
     elif event == _IRQ_GATTS_INDICATE_DONE:
         print("_IRQ_GATTS_INDICATE_DONE", data[-1])
 
@@ -146,7 +146,7 @@ def instance1():
     try:
         # Connect to peripheral and then disconnect.
         print("gap_connect")
-        ble.gap_connect(0, BDADDR)
+        ble.gap_connect(*BDADDR)
         if not wait_for_event(_IRQ_PERIPHERAL_CONNECT, TIMEOUT_MS):
             return
         conn_handle, _, _ = waiting_data

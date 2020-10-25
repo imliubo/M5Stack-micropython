@@ -36,7 +36,7 @@ def irq(event, data):
             print("_IRQ_GATTC_CHARACTERISTIC_RESULT", data[-1])
             value_handle = data[2]
     elif event == _IRQ_GATTC_READ_RESULT:
-        print("_IRQ_GATTC_READ_RESULT", data[-1])
+        print("_IRQ_GATTC_READ_RESULT", bytes(data[-1]))
 
     if waiting_event is not None:
         if isinstance(waiting_event, int) and event == waiting_event:
@@ -97,7 +97,7 @@ def instance1():
 
             # Connect to peripheral.
             print("gap_connect")
-            ble.gap_connect(0, BDADDR)
+            ble.gap_connect(*BDADDR)
             if not wait_for_event(_IRQ_PERIPHERAL_CONNECT, TIMEOUT_MS):
                 return
             conn_handle, _, _ = waiting_data

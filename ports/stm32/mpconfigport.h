@@ -100,6 +100,7 @@
 #define MICROPY_PY_BUILTINS_SLICE_INDICES (1)
 #define MICROPY_PY_BUILTINS_ROUND_INT (1)
 #define MICROPY_PY_ALL_SPECIAL_METHODS (1)
+#define MICROPY_PY_REVERSE_SPECIAL_METHODS (1)
 #define MICROPY_PY_BUILTINS_COMPILE (MICROPY_ENABLE_COMPILER)
 #define MICROPY_PY_BUILTINS_EXECFILE (MICROPY_ENABLE_COMPILER)
 #define MICROPY_PY_BUILTINS_NOTIMPLEMENTED (1)
@@ -182,13 +183,9 @@
 #define MICROPY_PY_MACHINE_PULSE    (1)
 #define MICROPY_PY_MACHINE_PIN_MAKE_NEW mp_pin_make_new
 #define MICROPY_PY_MACHINE_I2C      (1)
-#if MICROPY_HW_ENABLE_HW_I2C
-#define MICROPY_PY_MACHINE_I2C_MAKE_NEW machine_hard_i2c_make_new
-#endif
 #define MICROPY_PY_MACHINE_SPI      (1)
 #define MICROPY_PY_MACHINE_SPI_MSB  (SPI_FIRSTBIT_MSB)
 #define MICROPY_PY_MACHINE_SPI_LSB  (SPI_FIRSTBIT_LSB)
-#define MICROPY_PY_MACHINE_SPI_MAKE_NEW machine_hard_spi_make_new
 #define MICROPY_HW_SOFTSPI_MIN_DELAY (0)
 #define MICROPY_HW_SOFTSPI_MAX_BAUDRATE (HAL_RCC_GetSysClockFreq() / 48)
 #define MICROPY_PY_UWEBSOCKET       (MICROPY_PY_LWIP)
@@ -297,7 +294,8 @@ extern const struct _mp_obj_module_t mp_module_onewire;
 
 #if MICROPY_BLUETOOTH_NIMBLE
 struct _mp_bluetooth_nimble_root_pointers_t;
-#define MICROPY_PORT_ROOT_POINTER_BLUETOOTH_NIMBLE void **bluetooth_nimble_memory; struct _mp_bluetooth_nimble_root_pointers_t *bluetooth_nimble_root_pointers;
+struct _mp_bluetooth_nimble_malloc_t;
+#define MICROPY_PORT_ROOT_POINTER_BLUETOOTH_NIMBLE struct _mp_bluetooth_nimble_malloc_t *bluetooth_nimble_memory; struct _mp_bluetooth_nimble_root_pointers_t *bluetooth_nimble_root_pointers;
 #else
 #define MICROPY_PORT_ROOT_POINTER_BLUETOOTH_NIMBLE
 #endif
@@ -409,14 +407,20 @@ static inline mp_uint_t disable_irq(void) {
 #define MICROPY_THREAD_YIELD()
 #endif
 
-// The LwIP interface must run at a raised IRQ priority
-#define MICROPY_PY_LWIP_ENTER   uint32_t atomic_state = raise_irq_pri(IRQ_PRI_PENDSV);
-#define MICROPY_PY_LWIP_REENTER atomic_state = raise_irq_pri(IRQ_PRI_PENDSV);
-#define MICROPY_PY_LWIP_EXIT    restore_irq_pri(atomic_state);
+// For regular code that wants to prevent "background tasks" from running.
+// These background tasks (LWIP, Bluetooth) run in PENDSV context.
+#define MICROPY_PY_PENDSV_ENTER   uint32_t atomic_state = raise_irq_pri(IRQ_PRI_PENDSV);
+#define MICROPY_PY_PENDSV_REENTER atomic_state = raise_irq_pri(IRQ_PRI_PENDSV);
+#define MICROPY_PY_PENDSV_EXIT    restore_irq_pri(atomic_state);
 
-// Bluetooth calls must run at a raised IRQ priority
-#define MICROPY_PY_BLUETOOTH_ENTER MICROPY_PY_LWIP_ENTER
-#define MICROPY_PY_BLUETOOTH_EXIT MICROPY_PY_LWIP_EXIT
+// Prevent the "LWIP task" from running.
+#define MICROPY_PY_LWIP_ENTER   MICROPY_PY_PENDSV_ENTER
+#define MICROPY_PY_LWIP_REENTER MICROPY_PY_PENDSV_REENTER
+#define MICROPY_PY_LWIP_EXIT    MICROPY_PY_PENDSV_EXIT
+
+// Prevent the "Bluetooth task" from running (either NimBLE or btstack).
+#define MICROPY_PY_BLUETOOTH_ENTER MICROPY_PY_PENDSV_ENTER
+#define MICROPY_PY_BLUETOOTH_EXIT  MICROPY_PY_PENDSV_EXIT
 
 // We need an implementation of the log2 function which is not a macro
 #define MP_NEED_LOG2 (1)

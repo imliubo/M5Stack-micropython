@@ -87,6 +87,7 @@
 #define MICROPY_VFS_POSIX_FILE      (1)
 #define MICROPY_PY_FUNCTION_ATTRS   (1)
 #define MICROPY_PY_DESCRIPTORS      (1)
+#define MICROPY_PY_DELATTR_SETATTR  (1)
 #define MICROPY_PY_BUILTINS_STR_UNICODE (1)
 #define MICROPY_PY_BUILTINS_STR_CENTER (1)
 #define MICROPY_PY_BUILTINS_STR_PARTITION (1)
@@ -309,9 +310,16 @@ void mp_unix_mark_exec(void);
 
 #define MP_STATE_PORT MP_STATE_VM
 
-#if MICROPY_PY_BLUETOOTH && MICROPY_BLUETOOTH_BTSTACK
+#if MICROPY_PY_BLUETOOTH
+#if MICROPY_BLUETOOTH_BTSTACK
 struct _mp_bluetooth_btstack_root_pointers_t;
 #define MICROPY_BLUETOOTH_ROOT_POINTERS struct _mp_bluetooth_btstack_root_pointers_t *bluetooth_btstack_root_pointers;
+#endif
+#if MICROPY_BLUETOOTH_NIMBLE
+struct _mp_bluetooth_nimble_root_pointers_t;
+struct _mp_bluetooth_nimble_malloc_t;
+#define MICROPY_BLUETOOTH_ROOT_POINTERS struct _mp_bluetooth_nimble_malloc_t *bluetooth_nimble_memory; struct _mp_bluetooth_nimble_root_pointers_t *bluetooth_nimble_root_pointers;
+#endif
 #else
 #define MICROPY_BLUETOOTH_ROOT_POINTERS
 #endif
@@ -351,7 +359,7 @@ struct _mp_bluetooth_btstack_root_pointers_t;
 #endif
 
 #if MICROPY_PY_THREAD
-#define MICROPY_BEGIN_ATOMIC_SECTION() (mp_thread_unix_begin_atomic_section(), 0)
+#define MICROPY_BEGIN_ATOMIC_SECTION() (mp_thread_unix_begin_atomic_section(), 0xffffffff)
 #define MICROPY_END_ATOMIC_SECTION(x) (void)x; mp_thread_unix_end_atomic_section()
 #endif
 

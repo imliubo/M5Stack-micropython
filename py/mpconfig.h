@@ -454,6 +454,11 @@
 #define MICROPY_DEBUG_MP_OBJ_SENTINELS (0)
 #endif
 
+// Whether to print parse rule names (rather than integers) in mp_parse_node_print
+#ifndef MICROPY_DEBUG_PARSE_RULE_NAME
+#define MICROPY_DEBUG_PARSE_RULE_NAME (0)
+#endif
+
 // Whether to enable a simple VM stack overflow check
 #ifndef MICROPY_DEBUG_VM_STACK_OVERFLOW
 #define MICROPY_DEBUG_VM_STACK_OVERFLOW (0)
@@ -1160,6 +1165,11 @@ typedef double mp_float_t;
 #define MICROPY_PY_MATH_MODF_FIX_NEGZERO (0)
 #endif
 
+// Whether to provide fix for pow(1, NaN) and pow(NaN, 0), which both should be 1 not NaN.
+#ifndef MICROPY_PY_MATH_POW_FIX_NAN
+#define MICROPY_PY_MATH_POW_FIX_NAN (0)
+#endif
+
 // Whether to provide "cmath" module
 #ifndef MICROPY_PY_CMATH
 #define MICROPY_PY_CMATH (0)
@@ -1631,6 +1641,13 @@ typedef double mp_float_t;
 #else
 #define MP_UNREACHABLE for (;;);
 #endif
+#endif
+
+// Explicitly annotate switch case fall throughs
+#if defined(__GNUC__) && __GNUC__ >= 7
+#define MP_FALLTHROUGH __attribute__((fallthrough));
+#else
+#define MP_FALLTHROUGH
 #endif
 
 #ifndef MP_HTOBE16
