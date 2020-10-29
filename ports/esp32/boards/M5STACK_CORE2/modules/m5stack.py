@@ -23,37 +23,49 @@ SOFTWARE.
 '''
 from axp192 import AXP192
 
+def map(x, in_min, in_max, out_min, out_max):
+    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+
 class M5Stack(object):
 
     def __init__(self):
         self.axp = AXP192()
+        self.power_on()
 
     def power_on(self):
-        # GPIO1 & GPIO2 & GPIO4 set OD mode
-        self.axp.gpio_mode_set(self.axp.GPIO1, self.axp.IO_OPEN_DRAIN_OUTPUT_MODE)
-        self.axp.gpio_mode_set(self.axp.GPIO2, self.axp.IO_OPEN_DRAIN_OUTPUT_MODE)
-        self.axp.gpio_mode_set(self.axp.GPIO4, self.axp.IO_OPEN_DRAIN_OUTPUT_MODE)
+        # Set GPIO1 & GPIO2 & GPIO4  OD mode
+        self.axp.set_gpio_mode(self.axp.GPIO1, self.axp.IO_OPEN_DRAIN_OUTPUT_MODE)
+        self.axp.set_gpio_mode(self.axp.GPIO2, self.axp.IO_OPEN_DRAIN_OUTPUT_MODE)
+        self.axp.set_gpio_mode(self.axp.GPIO4, self.axp.IO_OPEN_DRAIN_OUTPUT_MODE)
 
-        # GPIO1 Power LED
+        # Enable GPIO1 Power LED
         self.axp.gpio_write(self.axp.GPIO1, 0)
 
         # DCDC1 3.3V => ESP32
-        self.axp.dc_voltage_set(1, 3.3)
+        self.axp.set_dc_voltage(1, 3.3)
         self.axp.dc_enable(1, 1)
 
         # DCDC3 3V => LCD Backlight
-        self.axp.dc_voltage_set(3, 3)
-        self.axp.dc_enable(1, 1)
+        self.axp.set_dc_voltage(3, 3)
 
         # LDO2 3.3V => LCD, SD
-        self.axp.ldo_voltage_set(2, 3.3)
+        self.axp.set_ldo_voltage(2, 3.3)
         self.axp.ldo_enable(2, 1)
 
         # LDO3 2V => motor
-        self.axp.ldo_voltage_set(3, 2)
+        self.axp.set_ldo_voltage(3, 2)
 
-        # BAT charge current 100MA
-        self.axp.back_bat_charge_current_set(self.axp.BAT_190MA)
+        # BAT charge current 190MA
+        self.axp.set_bat_charge_current(self.axp.BAT_190MA)
+
+    def lcd_backlight(self, value):
+        self.axp.dc_enable(3, value)
+
+    def lcd_brightness(self, value):
+        self.axp.set_dc_voltage(3, map(value, 0, 100, 2.4, 3.3))
+
+    def lcd_rst(self, value):
+        self.axp.gpio_write(4, value)
 
     def power_off(self):
         self.axp.power_off()
@@ -63,4 +75,3 @@ class M5Stack(object):
             self.axp.gpio_write(self.axp.GPIO1, 0)
         else:
             self.axp.gpio_write(self.axp.GPIO1, 1)
-         
