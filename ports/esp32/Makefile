@@ -40,7 +40,7 @@ FROZEN_MANIFEST ?= boards/manifest.py
 # include py core make definitions
 include $(TOP)/py/py.mk
 
-GIT_SUBMODULES = lib/berkeley-db-1.xx lib/lv_bindings
+GIT_SUBMODULES = lib/berkeley-db-1.xx
 
 PORT ?= /dev/ttyUSB0
 BAUD ?= 460800
