@@ -125,6 +125,7 @@
 #define MICROPY_PY_THREAD_GIL_VM_DIVISOR    (32)
 
 // extended modules
+#define MICROPY_PY_LVGL                     (1)
 #define MICROPY_PY_UASYNCIO                 (1)
 #define MICROPY_PY_UCTYPES                  (1)
 #define MICROPY_PY_UZLIB                    (1)
@@ -189,6 +190,20 @@ extern const struct _mp_obj_module_t mp_module_usocket;
 extern const struct _mp_obj_module_t mp_module_machine;
 extern const struct _mp_obj_module_t mp_module_network;
 extern const struct _mp_obj_module_t mp_module_onewire;
+extern const struct _mp_obj_module_t mp_module_lvgl;
+extern const struct _mp_obj_module_t mp_module_lvindev;
+extern const struct _mp_obj_module_t mp_module_lodepng;
+
+#if MICROPY_PY_LVGL
+#include "lib/lv_bindings/lvgl/src/lv_misc/lv_gc.h"
+#define MICROPY_PY_LVGL_DEF \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_lvgl), (mp_obj_t)&mp_module_lvgl },\
+    { MP_OBJ_NEW_QSTR(MP_QSTR_lvindev), (mp_obj_t)&mp_module_lvindev},\
+    { MP_OBJ_NEW_QSTR(MP_QSTR_lodepng), (mp_obj_t)&mp_module_lodepng },
+#else
+#define LV_ROOTS
+#define MICROPY_PY_LVGL_DEF
+#endif
 
 #define MICROPY_PORT_BUILTIN_MODULES \
     { MP_OBJ_NEW_QSTR(MP_QSTR_esp), (mp_obj_t)&esp_module }, \
@@ -199,6 +214,7 @@ extern const struct _mp_obj_module_t mp_module_onewire;
     { MP_OBJ_NEW_QSTR(MP_QSTR_machine), (mp_obj_t)&mp_module_machine }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_network), (mp_obj_t)&mp_module_network }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR__onewire), (mp_obj_t)&mp_module_onewire }, \
+    MICROPY_PY_LVGL_DEF
 
 #define MP_STATE_PORT MP_STATE_VM
 
@@ -212,6 +228,8 @@ struct mp_bluetooth_nimble_root_pointers_t;
 #endif
 
 #define MICROPY_PORT_ROOT_POINTERS \
+    LV_ROOTS \
+    void *mp_lv_user_data; \
     const char *readline_hist[8]; \
     mp_obj_t machine_pin_irq_handler[40]; \
     struct _machine_timer_obj_t *machine_timer_obj_head; \
