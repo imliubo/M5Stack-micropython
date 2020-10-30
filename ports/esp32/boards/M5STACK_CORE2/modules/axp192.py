@@ -1,4 +1,4 @@
-'''
+"""
 MIT License
 
 Copyright (c) 2020 IAMLIUBO
@@ -20,7 +20,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-'''
+"""
 from machine import I2C, Pin
 from micropython import const
 import ustruct
@@ -31,28 +31,78 @@ GPIOx_REWR_REG_LIST = [0x94, 0x94, 0x94, 0x96, 0x96]
 GPIOx_RE_VAL_OFFSET = [4, 5, 6, 4, 5]
 GPIOx_WR_VAL_OFFSET = [0, 1, 2, 0, 1]
 
-#                            DC1   DC2   DC3
+#                           DC1   DC2   DC3
 DC_VOL_SET_REG_LIST = [-1, 0x26, 0x23, 0x27]
 DC_ENABLE_OFFSET = [-1, 0x00, 0x04, 0x01]
 
-GPIO0_MODE_LIST = {0: const(0b101), 1: const(-1), 2: const(0b001), 3: const(0b010), 4: 0b100,
-                   5: const(0b111), 6: const(0b000), 7: const(-1), 8: const(-1)}
+GPIO0_MODE_LIST = {
+    0: const(0b101),
+    1: const(-1),
+    2: const(0b001),
+    3: const(0b010),
+    4: const(0b100),
+    5: const(0b111),
+    6: const(0b000),
+    7: const(-1),
+    8: const(-1),
+}
 
-GPIO1_2_MODE_LIST = {0: const(0b101), 1: const(-1), 2: const(0b001), 3: const(-1), 4: const(0b100),
-                     5: const(0b111), 6: const(0b000), 7: const(0b010), 8: const(-1)}
+GPIO1_2_MODE_LIST = {
+    0: const(0b101),
+    1: const(-1),
+    2: const(0b001),
+    3: const(-1),
+    4: const(0b100),
+    5: const(0b111),
+    6: const(0b000),
+    7: const(0b010),
+    8: const(-1),
+}
 
-GPIO3_MODE_LIST = {0: const(-1), 1: const(-1), 2: const(0b010), 3: const(-1), 4: const(-1),
-                   5: const(-1), 6: const(0b001), 7: const(-1), 8: const(0b000)}
+GPIO3_MODE_LIST = {
+    0: const(-1),
+    1: const(-1),
+    2: const(0b010),
+    3: const(-1),
+    4: const(-1),
+    5: const(-1),
+    6: const(0b001),
+    7: const(-1),
+    8: const(0b000),
+}
 
-GPIO4_MODE_LIST = {0: const(-1), 1: const(-1), 2: const(0b010), 3: const(-1), 4: const(0b011),
-                   5: const(-1), 6: const(0b001), 7: const(-1), 8: const(0b000)}
+GPIO4_MODE_LIST = {
+    0: const(-1),
+    1: const(-1),
+    2: const(0b010),
+    3: const(-1),
+    4: const(0b011),
+    5: const(-1),
+    6: const(0b001),
+    7: const(-1),
+    8: const(0b000),
+}
 
-GPIOx_MODE_LIST = [GPIO0_MODE_LIST, GPIO1_2_MODE_LIST, GPIO1_2_MODE_LIST, GPIO3_MODE_LIST, GPIO4_MODE_LIST]
+GPIOx_MODE_LIST = [
+    GPIO0_MODE_LIST,
+    GPIO1_2_MODE_LIST,
+    GPIO1_2_MODE_LIST,
+    GPIO3_MODE_LIST,
+    GPIO4_MODE_LIST,
+]
 
-GPIO_MODE_STR_LIST = ['OUTPUT_LOW_MODE', 'OUTPUT_HIGH_MODE',
-                      'INPUT_MODE', 'LDO_MODE', 'ADC_MODE',
-                      'FLOATING_MODE', 'OPEN_DRAIN_OUTPUT_MODE',
-                      'PWM_OUTPUT_MODE', 'EXTERN_CHARGING_CTRL_MODE']
+GPIO_MODE_STR_LIST = [
+    "OUTPUT_LOW_MODE",
+    "OUTPUT_HIGH_MODE",
+    "INPUT_MODE",
+    "LDO_MODE",
+    "ADC_MODE",
+    "FLOATING_MODE",
+    "OPEN_DRAIN_OUTPUT_MODE",
+    "PWM_OUTPUT_MODE",
+    "EXTERN_CHARGING_CTRL_MODE",
+]
+
 
 class AXP192(object):
 
@@ -140,10 +190,10 @@ class AXP192(object):
         if gpio < 0 or gpio > 4:
             return
         val = self._read_byte(GPIOx_REWR_REG_LIST[gpio])
-        mask = (1 << GPIOx_RE_VAL_OFFSET[gpio])
+        mask = 1 << GPIOx_RE_VAL_OFFSET[gpio]
         if self.debug:
             print("GPIO: {} Read: {}".format(gpio, (val & mask)))
-        return (val & mask)
+        return val & mask
 
     # Write gpio value.
     def gpio_write(self, gpio, value):
@@ -155,7 +205,7 @@ class AXP192(object):
         if value:
             if self.debug:
                 print("GPIO: {} Write: {}".format(gpio, value))
-            val |= (1 << GPIOx_WR_VAL_OFFSET[gpio])
+            val |= 1 << GPIOx_WR_VAL_OFFSET[gpio]
         else:
             if self.debug:
                 print("GPIO: {} Write: {}".format(gpio, value))
@@ -164,11 +214,12 @@ class AXP192(object):
 
     # Set the DCDC output voltage.
     def set_dc_voltage(self, dc, vol):
-        '''     vol range    step  current
+        """
+                vol range    step  current
         DCDC1: 0.7v ~ 3.5v   25mv   1.2A
         DCDC2: 0.7v ~ 2.275v 25mv   1.6A
         DCDC3: 0.7v ~ 3.5v   25mv   0.7A
-        '''
+        """
         if dc < 1 or dc > 3:
             return
         vol_mv = vol * 1000
@@ -184,18 +235,18 @@ class AXP192(object):
 
     # Enable the DCDC output.
     def dc_enable(self, dc, value):
-        '''
+        """
         value:
             0  disable
             1  enable
-        '''
+        """
         if dc < 1 or dc > 3:
             return
         val = self._read_byte(0x12)
         if value:
             if self.debug:
                 print("DC: {} enable".format(dc))
-            val |= (1 << DC_ENABLE_OFFSET[dc])
+            val |= 1 << DC_ENABLE_OFFSET[dc]
         else:
             if self.debug:
                 print("DC: {} disable".format(dc))
@@ -204,11 +255,12 @@ class AXP192(object):
 
     # Set LDO output voltage.
     def set_ldo_voltage(self, ldo, vol):
-        '''    vol range   step    current
+        """
+               vol range   step    current
         LDO1:    RTC                30ma
         LDO2: 1.8v ~ 3.3v  100mv    200ma
         LDO3: 1.8v ~ 3.3v  100mv    200ma
-        '''
+        """
         if ldo < 2 or ldo > 3:
             return
         vol_mv = vol * 1000
@@ -235,7 +287,7 @@ class AXP192(object):
         if value:
             if self.debug:
                 print("LDO: {} enable".format(ldo))
-            val |= (1 << ldo)
+            val |= 1 << ldo
         else:
             if self.debug:
                 print("LDO: {} enable".format(ldo))
@@ -260,7 +312,7 @@ class AXP192(object):
     def bat_charget_enable(self, value):
         val = self._read_byte(0x33)
         if value:
-            val |= (1 << 7)
+            val |= 1 << 7
         else:
             val &= ~(1 << 7)
         self._write_byte(0x33, val)
@@ -282,7 +334,7 @@ class AXP192(object):
     def back_bat_charget_enable(self, value):
         val = self._read_byte(0x35)
         if value:
-            val |= (1 << 7)
+            val |= 1 << 7
         else:
             val &= ~(1 << 7)
         self._write_byte(0x35, val)
@@ -290,15 +342,16 @@ class AXP192(object):
     # Turn off all power output.
     def power_off(self):
         val = self._read_byte(0x32)
-        val |= (1 << 7)
+        val |= 1 << 7
         self._write_byte(0x32, val)
 
-    '''
+    """
     I2C write & read function
-    '''
+    """
+
     def _write_byte(self, reg, data):
         buf = bytearray(1)
-        ustruct.pack_into('<b', buf, 0, data)
+        ustruct.pack_into("<b", buf, 0, data)
         self.i2c.writeto_mem(self.addr, reg, buf)
 
     def _read_byte(self, reg):

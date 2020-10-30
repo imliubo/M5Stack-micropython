@@ -1,4 +1,4 @@
-'''
+"""
 MIT License
 
 Copyright (c) 2020 IAMLIUBO
@@ -20,14 +20,15 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-'''
+"""
 from axp192 import AXP192
+
 
 def map(x, in_min, in_max, out_min, out_max):
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
 
-class M5Stack(object):
 
+class M5Stack(object):
     def __init__(self):
         self.axp = AXP192()
         self.power_on()
