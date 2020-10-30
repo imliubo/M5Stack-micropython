@@ -76,3 +76,6 @@ class M5Stack(object):
             self.axp.gpio_write(self.axp.GPIO1, 0)
         else:
             self.axp.gpio_write(self.axp.GPIO1, 1)
+
+    def vibration(self, state):
+        self.axp.ldo_enable(3, state)
