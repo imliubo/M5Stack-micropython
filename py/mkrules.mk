@@ -185,7 +185,7 @@ endif
 submodules:
 	$(ECHO) "Updating submodules: $(GIT_SUBMODULES)"
 ifneq ($(GIT_SUBMODULES),)
-	$(Q)git submodule update --init $(addprefix $(TOP)/,$(GIT_SUBMODULES))
+	$(Q)git submodule update --init --recursive $(addprefix $(TOP)/,$(GIT_SUBMODULES))
 endif
 .PHONY: submodules
 

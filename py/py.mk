@@ -42,11 +42,6 @@ $(LVGL_MPY): $(ALL_LVGL_SRC) $(LVGL_BINDING_DIR)/gen/gen_mpy.py
 CFLAGS_MOD += -Wno-unused-function
 SRC_MOD += $(subst $(TOP)/,,$(shell find $(LVGL_DIR)/src $(LVGL_GENERIC_DRV_DIR) -type f -name "*.c") $(LVGL_MPY))
 
-# Clone lvgl recursively if not already done:
-$(TOP)/lib/lv_bindings/lvgl/README.md:
-	@echo "Cloning lvgl subomodule recursively"
-	(cd $(TOP)/lib/lv_bindings; git submodule update --init --recursive)
-
 # Enable building 32-bit code on 64-bit host.
 ifeq ($(MICROPY_FORCE_32BIT),1)
 CC += -m32
