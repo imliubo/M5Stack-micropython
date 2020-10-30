@@ -7,7 +7,9 @@ The MicroPython for M5Stack project
 </p>
 This is the MicroPython project, which aims to put an implementation
 of Python 3.x on microcontrollers and small embedded systems.
+
 You can find the official website at [micropython.org](http://www.micropython.org).
+
 More detail about MicroPython project you can find at the original repository on [github](github.com/micropython.micropython).
 
 [About M5Stack](https://m5stack.com/)
