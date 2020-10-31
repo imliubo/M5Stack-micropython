@@ -53,7 +53,7 @@ jobs:
         - make ${MAKEOPTS} -C mpy-cross
         - git -C esp-idf checkout $(grep "ESPIDF_SUPHASH_V3 :=" ports/esp32/Makefile | cut -d " " -f 3)
         - git -C esp-idf submodule update --init components/json/cJSON components/esp32/lib components/esptool_py/esptool components/expat/expat components/lwip/lwip components/mbedtls/mbedtls components/micro-ecc/micro-ecc components/nghttp/nghttp2 components/nimble components/bt
-        - make ${MAKEOPTS} -C ports/esp32
+        - make ${MAKEOPTS} -C ports/esp32 BOARD=M5STACK_CORE2
 
     # esp32 w/ESP-IDFv4 port
     - stage: test
@@ -70,4 +70,4 @@ jobs:
         - make ${MAKEOPTS} -C mpy-cross
         - git -C esp-idf checkout $(grep "ESPIDF_SUPHASH_V4 :=" ports/esp32/Makefile | cut -d " " -f 3)
         - git -C esp-idf submodule update --init components/bt/controller/lib components/bt/host/nimble/nimble components/esp_wifi/lib_esp32 components/esptool_py/esptool components/lwip/lwip components/mbedtls/mbedtls
-        - make ${MAKEOPTS} -C ports/esp32
+        - make ${MAKEOPTS} -C ports/esp32 BOARD=M5STACK_CORE2

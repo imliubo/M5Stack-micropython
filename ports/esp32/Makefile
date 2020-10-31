@@ -401,6 +401,8 @@ LIB_SRC_C += \
 	
 #	lib/lv_bindings/driver/esp32/modxpt2046.c
 
+LV_CFLAGS=-DLV_COLOR_DEPTH=16 -DLV_COLOR_16_SWAP=1
+
 DRIVERS_SRC_C = $(addprefix drivers/,\
 	bus/softspi.c \
 	dht/dht.c \
