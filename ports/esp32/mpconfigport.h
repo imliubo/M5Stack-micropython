@@ -163,6 +163,11 @@
 #define MICROPY_PY_BLUETOOTH_RANDOM_ADDR    (1)
 #define MICROPY_PY_BLUETOOTH_DEFAULT_GAP_NAME ("ESP32")
 
+#define MICROPY_PY_LVGL                     (1)
+#define MICROPY_PY_ESPIDF                   (1)
+#define MICROPY_PY_LODEPNG                  (1)
+#define MICROPY_PY_RTCH                     (1)
+
 // fatfs configuration
 #define MICROPY_FATFS_ENABLE_LFN            (1)
 #define MICROPY_FATFS_RPATH                 (2)
@@ -191,18 +196,45 @@ extern const struct _mp_obj_module_t mp_module_machine;
 extern const struct _mp_obj_module_t mp_module_network;
 extern const struct _mp_obj_module_t mp_module_onewire;
 extern const struct _mp_obj_module_t mp_module_lvgl;
-extern const struct _mp_obj_module_t mp_module_lvindev;
+extern const struct _mp_obj_module_t mp_module_espidf;
+extern const struct _mp_obj_module_t mp_module_lvesp32;
+extern const struct _mp_obj_module_t mp_module_rtch;
 extern const struct _mp_obj_module_t mp_module_lodepng;
+extern const struct _mp_obj_module_t mp_module_ILI9341;
 
 #if MICROPY_PY_LVGL
-#include "lib/lv_bindings/lvgl/src/lv_misc/lv_gc.h"
-#define MICROPY_PY_LVGL_DEF \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_lvgl), (mp_obj_t)&mp_module_lvgl },\
-    { MP_OBJ_NEW_QSTR(MP_QSTR_lvindev), (mp_obj_t)&mp_module_lvindev},\
-    { MP_OBJ_NEW_QSTR(MP_QSTR_lodepng), (mp_obj_t)&mp_module_lodepng },
+#define MICROPY_PORT_LVGL_DEF \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_lvgl), (mp_obj_t)&mp_module_lvgl }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_lvesp32), (mp_obj_t)&mp_module_lvesp32 }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_ILI9341), (mp_obj_t)&mp_module_ILI9341 },
+//    { MP_OBJ_NEW_QSTR(MP_QSTR_xpt2046), (mp_obj_t)&mp_module_xpt2046 },
+
+// lvesp needs to delete the timer task upon soft reset
+
+extern void lvesp_deinit();
+extern void lv_deinit(void);
+#define MICROPY_PORT_DEINIT_FUNC lvesp_deinit(); lv_deinit()
+
 #else
-#define LV_ROOTS
-#define MICROPY_PY_LVGL_DEF
+#define MICROPY_PORT_LVGL_DEF
+#endif
+
+#if MICROPY_PY_ESPIDF
+#define MICROPY_PORT_ESPIDF_DEF { MP_OBJ_NEW_QSTR(MP_QSTR_espidf), (mp_obj_t)&mp_module_espidf },
+#else
+#define MICROPY_PORT_ESPIDF_DEF
+#endif
+
+#if MICROPY_PY_LODEPNG
+#define MICROPY_PORT_LODEPNG_DEF { MP_OBJ_NEW_QSTR(MP_QSTR_lodepng), (mp_obj_t)&mp_module_lodepng },
+#else
+#define MICROPY_PORT_LODEPNG_DEF
+#endif
+
+#if MICROPY_PY_RTCH
+#define MICROPY_PORT_RTCH_DEF { MP_OBJ_NEW_QSTR(MP_QSTR_rtch), (mp_obj_t)&mp_module_rtch },
+#else
+#define MICROPY_PORT_RTCH_DEF
 #endif
 
 #define MICROPY_PORT_BUILTIN_MODULES \
@@ -214,11 +246,21 @@ extern const struct _mp_obj_module_t mp_module_lodepng;
     { MP_OBJ_NEW_QSTR(MP_QSTR_machine), (mp_obj_t)&mp_module_machine }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_network), (mp_obj_t)&mp_module_network }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR__onewire), (mp_obj_t)&mp_module_onewire }, \
-    MICROPY_PY_LVGL_DEF
+    { MP_OBJ_NEW_QSTR(MP_QSTR_uhashlib), (mp_obj_t)&mp_module_uhashlib }, \
+    MICROPY_PORT_LVGL_DEF \
+    MICROPY_PORT_ESPIDF_DEF \
+    MICROPY_PORT_LODEPNG_DEF \
+    MICROPY_PORT_RTCH_DEF
 
 #define MP_STATE_PORT MP_STATE_VM
 
 struct _machine_timer_obj_t;
+
+#if MICROPY_PY_LVGL
+#include "lib/lv_bindings/lvgl/src/lv_misc/lv_gc.h"
+#else
+#define LV_ROOTS
+#endif
 
 #if MICROPY_BLUETOOTH_NIMBLE
 struct mp_bluetooth_nimble_root_pointers_t;
