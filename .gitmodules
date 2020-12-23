@@ -36,3 +36,6 @@
 [submodule "lib/nxp_driver"]
 	path = lib/nxp_driver
 	url = https://github.com/hathach/nxp_driver.git
+[submodule "lib/lv_bindings"]
+	path = lib/lv_bindings
+	url = https://github.com/imliubo/lv_binding_micropython

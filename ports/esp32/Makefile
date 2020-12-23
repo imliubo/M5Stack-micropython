@@ -400,6 +400,7 @@ LIB_SRC_C += \
 	lib/lv_bindings/driver/esp32/modrtch.c \
 	lib/lv_bindings/driver/esp32/espidf.c \
 	lib/lv_bindings/driver/esp32/modILI9341.c \
+	lib/lv_bindings/driver/esp32/sh2lib.c \
 	$(ESPIDFMOD_MODULE)
 	
 #	lib/lv_bindings/driver/esp32/modxpt2046.c
