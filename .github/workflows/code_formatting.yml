@@ -7,6 +7,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - name: Update submodules
+      run: git submodule update --init --recursive  
     - uses: actions/setup-python@v1
     - name: Install packages
       run: source tools/ci.sh && ci_code_formatting_setup

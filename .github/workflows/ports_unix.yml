@@ -18,6 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - name: Update submodules
+      run: git submodule update --init --recursive  
     - name: Build
       run: source tools/ci.sh && ci_unix_minimal_build
     - name: Run main test suite
@@ -30,6 +32,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - name: Update submodules
+      run: git submodule update --init --recursive  
     - name: Build
       run: source tools/ci.sh && ci_unix_standard_build
     - name: Run main test suite
@@ -44,6 +48,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - name: Update submodules
+      run: git submodule update --init --recursive  
     - name: Install packages
       run: source tools/ci.sh && ci_unix_coverage_setup
     - name: Build
@@ -71,6 +77,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - name: Update submodules
+      run: git submodule update --init --recursive  
     - name: Install packages
       run: source tools/ci.sh && ci_unix_32bit_setup
     - name: Build
@@ -89,6 +97,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - name: Update submodules
+      run: git submodule update --init --recursive  
     - name: Install packages
       run: source tools/ci.sh && ci_unix_32bit_setup
     - name: Build
@@ -103,6 +113,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - name: Update submodules
+      run: git submodule update --init --recursive  
     - name: Build
       run: source tools/ci.sh && ci_unix_float_build
     - name: Run main test suite
@@ -115,6 +127,8 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
+    - name: Update submodules
+      run: git submodule update --init --recursive  
     - name: Install packages
       run: source tools/ci.sh && ci_unix_clang_setup
     - name: Build
@@ -129,6 +143,8 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
+    - name: Update submodules
+      run: git submodule update --init --recursive  
     - name: Install packages
       run: source tools/ci.sh && ci_unix_clang_setup
     - name: Build
@@ -143,6 +159,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - name: Update submodules
+      run: git submodule update --init --recursive  
     - name: Build
       run: source tools/ci.sh && ci_unix_settrace_build
     - name: Run main test suite
@@ -155,6 +173,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - name: Update submodules
+      run: git submodule update --init --recursive  
     - name: Build
       run: source tools/ci.sh && ci_unix_settrace_stackless_build
     - name: Run main test suite
@@ -167,6 +187,8 @@ jobs:
     runs-on: macos-11.0
     steps:
     - uses: actions/checkout@v2
+    - name: Update submodules
+      run: git submodule update --init --recursive  
     - uses: actions/setup-python@v1
     - name: Build
       run: source tools/ci.sh && ci_unix_macos_build

@@ -11,6 +11,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: Update submodules
+      run: git submodule update --init --recursive  
     - uses: actions/setup-python@v1
     - name: Install Python packages
       run: pip install Sphinx
