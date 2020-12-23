@@ -23,11 +23,13 @@ M5Stack main controller support list
 | [Core2](https://docs.m5stack.com/#/en/core/core2)                |     alpha      |
 | [Core](https://docs.m5stack.com/#/en/core/basic)                 |      not       |
 | [Fire](https://docs.m5stack.com/#/en/core/fire)                  |      not       |
+| [Core2 for AWS](https://docs.m5stack.com/#/en/core/core2_for_aws)|      not       |
+| [M5Paper](https://docs.m5stack.com/#/en/core/m5paper)            |      not       |
+| [CoreInk](https://docs.m5stack.com/#/en/core/coreink)            |      not       |
 | [Stick-C](https://docs.m5stack.com/#/en/core/m5stickc)           |      not       |
 | [Stick-C Plus](https://docs.m5stack.com/#/en/core/m5stickc_plus) |      not       |
-| [ATOM Lite](https://docs.m5stack.com/#/en/core/atom_lite)        |      not       |
 | [ATOM Matrix](https://docs.m5stack.com/#/en/core/atom_matrix)    |      not       |
-| CoreInk(not sale yet)                                            |      not       |
+| [ATOM Lite](https://docs.m5stack.com/#/en/core/atom_lite)        |      not       |
 
 - ``not`` not support yet(The basic functions of micropython can be used).
 - ``alpha`` just start for support, have bugs and missing functionality. 

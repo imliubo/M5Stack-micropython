@@ -79,6 +79,7 @@
 #define MICROPY_FLOAT_IMPL          (MICROPY_FLOAT_IMPL_FLOAT)
 #endif
 #define MICROPY_STREAMS_NON_BLOCK   (1)
+#define MICROPY_MODULE_BUILTIN_INIT (1)
 #define MICROPY_MODULE_WEAK_LINKS   (1)
 #define MICROPY_CAN_OVERRIDE_BUILTINS (1)
 #define MICROPY_USE_INTERNAL_ERRNO  (1)
@@ -167,6 +168,7 @@
 #endif
 #ifndef MICROPY_PY_URANDOM
 #define MICROPY_PY_URANDOM          (1)
+#define MICROPY_PY_URANDOM_SEED_INIT_FUNC (rng_get())
 #endif
 #ifndef MICROPY_PY_URANDOM_EXTRA_FUNCS
 #define MICROPY_PY_URANDOM_EXTRA_FUNCS (1)
@@ -418,12 +420,22 @@ static inline mp_uint_t disable_irq(void) {
 #define MICROPY_PY_LWIP_REENTER MICROPY_PY_PENDSV_REENTER
 #define MICROPY_PY_LWIP_EXIT    MICROPY_PY_PENDSV_EXIT
 
-// Prevent the "Bluetooth task" from running (either NimBLE or btstack).
+#if MICROPY_PY_BLUETOOTH_USE_SYNC_EVENTS
+// Bluetooth code only runs in the scheduler, no locking/mutex required.
+#define MICROPY_PY_BLUETOOTH_ENTER uint32_t atomic_state = 0;
+#define MICROPY_PY_BLUETOOTH_EXIT (void)atomic_state;
+#else
+// When async events are enabled, need to prevent PendSV execution racing with
+// scheduler execution.
 #define MICROPY_PY_BLUETOOTH_ENTER MICROPY_PY_PENDSV_ENTER
 #define MICROPY_PY_BLUETOOTH_EXIT  MICROPY_PY_PENDSV_EXIT
+#endif
 
 // We need an implementation of the log2 function which is not a macro
 #define MP_NEED_LOG2 (1)
 
 // We need to provide a declaration/definition of alloca()
 #include <alloca.h>
+
+// Needed for MICROPY_PY_URANDOM_SEED_INIT_FUNC.
+uint32_t rng_get(void);

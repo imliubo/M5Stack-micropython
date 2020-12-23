@@ -46,3 +46,5 @@ genrst/
 ports/esp32/makefile
 
 .vscode/
+
+.vscode-ctags

@@ -156,8 +156,6 @@ endif
 
 CFLAGS_MOD += -DMICROPY_PY_BLUETOOTH=1
 CFLAGS_MOD += -DMICROPY_PY_BLUETOOTH_ENABLE_CENTRAL_MODE=1
-# Runs in a thread, cannot make calls into the VM.
-CFLAGS_MOD += -DMICROPY_PY_BLUETOOTH_GATTS_ON_READ_CALLBACK=0
 
 ifeq ($(MICROPY_BLUETOOTH_BTSTACK),1)
 
@@ -184,6 +182,7 @@ else
 
 # NimBLE is enabled.
 GIT_SUBMODULES += lib/mynewt-nimble
+CFLAGS_MOD += -DMICROPY_PY_BLUETOOTH_ENABLE_L2CAP_CHANNELS=1
 include $(TOP)/extmod/nimble/nimble.mk
 
 endif
@@ -220,7 +219,7 @@ SRC_MOD += modjni.c
 endif
 
 # source files
-SRC_C = \
+SRC_C += \
 	main.c \
 	gccollect.c \
 	unix_mphal.c \
@@ -232,7 +231,6 @@ SRC_C = \
 	modtime.c \
 	moduselect.c \
 	alloc.c \
-	coverage.c \
 	fatfs_port.c \
 	mpbthciport.c \
 	mpbtstackport_common.c \
@@ -248,13 +246,17 @@ LIB_SRC_C += $(addprefix lib/,\
 	utils/gchelper_generic.c \
 	)
 
+SRC_CXX += \
+	$(SRC_MOD_CXX)
+
 OBJ = $(PY_O)
 OBJ += $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
+OBJ += $(addprefix $(BUILD)/, $(SRC_CXX:.cpp=.o))
 OBJ += $(addprefix $(BUILD)/, $(LIB_SRC_C:.c=.o))
 OBJ += $(addprefix $(BUILD)/, $(EXTMOD_SRC_C:.c=.o))
 
 # List of sources for qstr extraction
-SRC_QSTR += $(SRC_C) $(LIB_SRC_C) $(EXTMOD_SRC_C)
+SRC_QSTR += $(SRC_C) $(SRC_CXX) $(LIB_SRC_C) $(EXTMOD_SRC_C)
 # Append any auto-generated sources that are needed by sources listed in
 # SRC_QSTR
 SRC_QSTR_AUTO_DEPS +=
@@ -271,6 +273,14 @@ endif
 ifneq ($(FROZEN_MANIFEST)$(FROZEN_DIR),)
 CFLAGS += -DMICROPY_MODULE_FROZEN_STR
 endif
+
+HASCPP17 = $(shell expr `$(CC) -dumpversion | cut -f1 -d.` \>= 7)
+ifeq ($(HASCPP17), 1)
+	CXXFLAGS += -std=c++17
+else
+	CXXFLAGS += -std=c++11
+endif
+CXXFLAGS += $(filter-out -Wmissing-prototypes -Wold-style-definition -std=gnu99,$(CFLAGS) $(CXXFLAGS_MOD))
 
 ifeq ($(MICROPY_FORCE_32BIT),1)
 RUN_TESTS_MPY_CROSS_FLAGS = --mpy-cross-flags='-mcache-lookup-bc -march=x86'

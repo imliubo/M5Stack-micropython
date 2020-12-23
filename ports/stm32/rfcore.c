@@ -31,12 +31,28 @@
 #include "py/mperrno.h"
 #include "py/mphal.h"
 #include "py/runtime.h"
+#include "extmod/modbluetooth.h"
 #include "rtc.h"
 #include "rfcore.h"
 
 #if defined(STM32WB)
 
 #include "stm32wbxx_ll_ipcc.h"
+
+#if MICROPY_PY_BLUETOOTH
+
+#if MICROPY_BLUETOOTH_NIMBLE
+// For mp_bluetooth_nimble_hci_uart_wfi
+#include "nimble/nimble_npl.h"
+#else
+#error "STM32WB must use NimBLE."
+#endif
+
+#if !MICROPY_PY_BLUETOOTH_USE_SYNC_EVENTS
+#error "STM32WB must use synchronous BLE events."
+#endif
+
+#endif
 
 #define DEBUG_printf(...) // printf("rfcore: " __VA_ARGS__)
 
@@ -52,10 +68,12 @@
 #define OCF_CB_RESET             (0x03)
 #define OCF_CB_SET_EVENT_MASK2   (0x63)
 
-#define OGF_VENDOR               (0x3f)
-#define OCF_WRITE_CONFIG         (0x0c)
-#define OCF_SET_TX_POWER         (0x0f)
-#define OCF_BLE_INIT             (0x66)
+#define OGF_VENDOR                        (0x3f)
+#define OCF_WRITE_CONFIG                  (0x0c)
+#define OCF_SET_TX_POWER                  (0x0f)
+#define OCF_BLE_INIT                      (0x66)
+#define OCF_C2_FLASH_ERASE_ACTIVITY       (0x69)
+#define OCF_C2_SET_FLASH_ACTIVITY_CONTROL (0x73)
 
 #define HCI_OPCODE(ogf, ocf) ((ogf) << 10 | (ocf))
 
@@ -65,8 +83,9 @@
 #define HCI_KIND_VENDOR_RESPONSE (0x11)
 #define HCI_KIND_VENDOR_EVENT (0x12)
 
-#define HCI_EVENT_COMMAND_COMPLETE     (0x0E) // <num packets><opcode 16><status><data...>
-#define HCI_EVENT_COMMAND_STATUS       (0x0F) // <status><num_packets><opcode 16>
+#define HCI_EVENT_COMMAND_COMPLETE            (0x0E) // <num packets><opcode 16><status><data...>
+#define HCI_EVENT_COMMAND_STATUS              (0x0F) // <status><num_packets><opcode 16>
+#define HCI_EVENT_NUMBER_OF_COMPLETED_PACKETS (0x13) // <num>(<handle 16><completed 16>)*
 
 #define SYS_ACK_TIMEOUT_MS (250)
 #define BLE_ACK_TIMEOUT_MS (250)
@@ -75,6 +94,8 @@
 #define MAGIC_FUS_ACTIVE 0xA94656B9
 // AN5289
 #define MAGIC_IPCC_MEM_INCORRECT 0x3DE96F61
+
+volatile bool hci_acl_cmd_pending = false;
 
 typedef struct _tl_list_node_t {
     volatile struct _tl_list_node_t *next;
@@ -191,9 +212,6 @@ STATIC uint8_t ipcc_membuf_ble_cs_buf[272]; // mem2
 STATIC tl_list_node_t ipcc_mem_ble_evt_queue; // mem1
 STATIC uint8_t ipcc_membuf_ble_hci_acl_data_buf[272]; // mem2
 
-// Set by the RX IRQ handler on incoming HCI payload.
-STATIC volatile bool had_ble_irq = false;
-
 /******************************************************************************/
 // Transport layer linked list
 
@@ -300,6 +318,11 @@ STATIC size_t tl_parse_hci_msg(const uint8_t *buf, parse_hci_info_t *parse) {
         }
         case HCI_KIND_BT_EVENT: {
             info = "HCI_EVT";
+
+            // Acknowledgment of a pending ACL request, allow another one to be sent.
+            if (buf[1] == HCI_EVENT_NUMBER_OF_COMPLETED_PACKETS) {
+                hci_acl_cmd_pending = false;
+            }
 
             len = 3 + buf[2];
             if (parse != NULL) {
@@ -408,6 +431,7 @@ STATIC void tl_process_msg(volatile tl_list_node_t *head, unsigned int ch, parse
     }
 }
 
+// Only call this when IRQs are disabled on this channel.
 STATIC void tl_check_msg(volatile tl_list_node_t *head, unsigned int ch, parse_hci_info_t *parse) {
     if (LL_C2_IPCC_IsActiveFlag_CHx(IPCC, ch)) {
         tl_process_msg(head, ch, parse);
@@ -417,18 +441,10 @@ STATIC void tl_check_msg(volatile tl_list_node_t *head, unsigned int ch, parse_h
     }
 }
 
-STATIC void tl_check_msg_ble(volatile tl_list_node_t *head, parse_hci_info_t *parse) {
-    if (had_ble_irq) {
-        tl_process_msg(head, IPCC_CH_BLE, parse);
-
-        had_ble_irq = false;
-    }
-}
-
 STATIC void tl_hci_cmd(uint8_t *cmd, unsigned int ch, uint8_t hdr, uint16_t opcode, const uint8_t *buf, size_t len) {
     tl_list_node_t *n = (tl_list_node_t *)cmd;
-    n->next = n;
-    n->prev = n;
+    n->next = NULL;
+    n->prev = NULL;
     cmd[8] = hdr;
     cmd[9] = opcode;
     cmd[10] = opcode >> 8;
@@ -472,7 +488,7 @@ STATIC ssize_t tl_sys_hci_cmd_resp(uint16_t opcode, const uint8_t *buf, size_t l
 
 STATIC int tl_ble_wait_resp(void) {
     uint32_t t0 = mp_hal_ticks_ms();
-    while (!had_ble_irq) {
+    while (!LL_C2_IPCC_IsActiveFlag_CHx(IPCC, IPCC_CH_BLE)) {
         if (mp_hal_ticks_ms() - t0 > BLE_ACK_TIMEOUT_MS) {
             printf("tl_ble_wait_resp: timeout\n");
             return -MP_ETIMEDOUT;
@@ -480,14 +496,16 @@ STATIC int tl_ble_wait_resp(void) {
     }
 
     // C2 set IPCC flag.
-    tl_check_msg_ble(&ipcc_mem_ble_evt_queue, NULL);
+    tl_check_msg(&ipcc_mem_ble_evt_queue, IPCC_CH_BLE, NULL);
     return 0;
 }
 
 // Synchronously send a BLE command.
 STATIC void tl_ble_hci_cmd_resp(uint16_t opcode, const uint8_t *buf, size_t len) {
+    LL_C1_IPCC_DisableReceiveChannel(IPCC, IPCC_CH_BLE);
     tl_hci_cmd(ipcc_membuf_ble_cmd_buf, IPCC_CH_BLE, HCI_KIND_BT_CMD, opcode, buf, len);
     tl_ble_wait_resp();
+    LL_C1_IPCC_EnableReceiveChannel(IPCC, IPCC_CH_BLE);
 }
 
 /******************************************************************************/
@@ -554,13 +572,16 @@ static const struct {
 void rfcore_ble_init(void) {
     DEBUG_printf("rfcore_ble_init\n");
 
-    // Clear any outstanding messages from ipcc_init
+    // Clear any outstanding messages from ipcc_init.
     tl_check_msg(&ipcc_mem_sys_queue, IPCC_CH_SYS, NULL);
-    tl_check_msg_ble(&ipcc_mem_ble_evt_queue, NULL);
 
-    // Configure and reset the BLE controller
+    // Configure and reset the BLE controller.
     tl_sys_hci_cmd_resp(HCI_OPCODE(OGF_VENDOR, OCF_BLE_INIT), (const uint8_t *)&ble_init_params, sizeof(ble_init_params), 0);
     tl_ble_hci_cmd_resp(HCI_OPCODE(0x03, 0x0003), NULL, 0);
+
+    // Enable PES rather than SEM7 to moderate flash access between the cores.
+    uint8_t buf = 0; // FLASH_ACTIVITY_CONTROL_PES
+    tl_sys_hci_cmd_resp(HCI_OPCODE(OGF_VENDOR, OCF_C2_SET_FLASH_ACTIVITY_CONTROL), &buf, 1, 0);
 }
 
 void rfcore_ble_hci_cmd(size_t len, const uint8_t *src) {
@@ -582,13 +603,27 @@ void rfcore_ble_hci_cmd(size_t len, const uint8_t *src) {
     } else if (src[0] == HCI_KIND_BT_ACL) {
         n = (tl_list_node_t *)&ipcc_membuf_ble_hci_acl_data_buf[0];
         ch = IPCC_CH_HCI_ACL;
+
+        // Give the previous ACL command up to 100ms to complete.
+        mp_uint_t timeout_start_ticks_ms = mp_hal_ticks_ms();
+        while (hci_acl_cmd_pending) {
+            if (mp_hal_ticks_ms() - timeout_start_ticks_ms > 100) {
+                break;
+            }
+            #if MICROPY_PY_BLUETOOTH && MICROPY_BLUETOOTH_NIMBLE
+            mp_bluetooth_nimble_hci_uart_wfi();
+            #endif
+        }
+
+        // Prevent sending another command until this one returns with HCI_EVENT_COMMAND_{COMPLETE,STATUS}.
+        hci_acl_cmd_pending = true;
     } else {
         printf("** UNEXPECTED HCI HDR: 0x%02x **\n", src[0]);
         return;
     }
 
-    n->next = n;
-    n->prev = n;
+    n->next = NULL;
+    n->prev = NULL;
     memcpy(n->body, src, len);
 
     // IPCC indicate.
@@ -597,7 +632,7 @@ void rfcore_ble_hci_cmd(size_t len, const uint8_t *src) {
 
 void rfcore_ble_check_msg(int (*cb)(void *, const uint8_t *, size_t), void *env) {
     parse_hci_info_t parse = { cb, env, false };
-    tl_check_msg_ble(&ipcc_mem_ble_evt_queue, &parse);
+    tl_process_msg(&ipcc_mem_ble_evt_queue, IPCC_CH_BLE, &parse);
 
     // Intercept HCI_Reset events and reconfigure the controller following the reset
     if (parse.was_hci_reset_evt) {
@@ -620,7 +655,19 @@ void rfcore_ble_set_txpower(uint8_t level) {
     tl_ble_hci_cmd_resp(HCI_OPCODE(OGF_VENDOR, OCF_SET_TX_POWER), buf, 2);
 }
 
+void rfcore_start_flash_erase(void) {
+    uint8_t buf = 1; // ERASE_ACTIVITY_ON
+    tl_sys_hci_cmd_resp(HCI_OPCODE(OGF_VENDOR, OCF_C2_FLASH_ERASE_ACTIVITY), &buf, 1, 0);
+}
+
+void rfcore_end_flash_erase(void) {
+    uint8_t buf = 0; // ERASE_ACTIVITY_OFF
+    tl_sys_hci_cmd_resp(HCI_OPCODE(OGF_VENDOR, OCF_C2_FLASH_ERASE_ACTIVITY), &buf, 1, 0);
+}
+
+/******************************************************************************/
 // IPCC IRQ Handlers
+
 void IPCC_C1_TX_IRQHandler(void) {
     IRQ_ENTER(IPCC_C1_TX_IRQn);
     IRQ_EXIT(IPCC_C1_TX_IRQn);
@@ -629,14 +676,16 @@ void IPCC_C1_TX_IRQHandler(void) {
 void IPCC_C1_RX_IRQHandler(void) {
     IRQ_ENTER(IPCC_C1_RX_IRQn);
 
-    if (LL_C2_IPCC_IsActiveFlag_CHx(IPCC, IPCC_CH_BLE)) {
-        had_ble_irq = true;
+    DEBUG_printf("IPCC_C1_RX_IRQHandler\n");
 
+    if (LL_C2_IPCC_IsActiveFlag_CHx(IPCC, IPCC_CH_BLE)) {
         LL_C1_IPCC_ClearFlag_CHx(IPCC, IPCC_CH_BLE);
 
-        // Schedule PENDSV to process incoming HCI payload.
-        extern void mp_bluetooth_hci_poll_wrapper(uint32_t ticks_ms);
-        mp_bluetooth_hci_poll_wrapper(0);
+        #if MICROPY_PY_BLUETOOTH
+        // Queue up the scheduler to process UART data and run events.
+        extern void mp_bluetooth_hci_systick(uint32_t ticks_ms);
+        mp_bluetooth_hci_systick(0);
+        #endif
     }
 
     IRQ_EXIT(IPCC_C1_RX_IRQn);
