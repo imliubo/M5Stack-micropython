@@ -22,6 +22,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 from axp192 import AXP192
+import lvgl as lv
+from ft6336u import ft6336u
+from axpili9342 import ili9342
+from imagetools import get_png_info, open_png
 
 
 def map(x, in_min, in_max, out_min, out_max):
@@ -32,6 +36,15 @@ class M5Stack(object):
     def __init__(self):
         self.axp = AXP192()
         self.power_on()
+
+        self.lv = lv
+        self.lv.init()
+        self.disp = ili9342(self)  # init LCD
+        self.touch = ft6336u()  # init TOUCH
+
+        decoder = lv.img.decoder_create()
+        decoder.info_cb = get_png_info
+        decoder.open_cb = open_png
 
     def power_on(self):
         # Set GPIO1 & GPIO2 & GPIO4  OD mode

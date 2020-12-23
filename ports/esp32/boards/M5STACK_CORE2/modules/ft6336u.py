@@ -1,17 +1,17 @@
+from micropython import const
 from machine import Pin, I2C
-import espidf as esp
 import lvesp32
 import lvgl as lv
 
+FT_ADDR = const(0x38)
+FT_INT_PIN = const(39)
+
 
 class ft6336u:
-    FT_ADDR = const(0x38)
-    FT_INT_PIN = const(39)
-
     def __init__(self):
 
         # Initializations
-        self.i2c = I2C(sda=Pin(21), scl=Pin(22))
+        self.i2c = I2C(1, sda=Pin(21), scl=Pin(22), freq=100000)
         self.int = Pin(FT_INT_PIN, Pin.IN)
 
         disp = lv.disp_t.cast(None)

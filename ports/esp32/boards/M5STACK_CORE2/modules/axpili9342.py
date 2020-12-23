@@ -23,7 +23,6 @@ import lvgl as lv
 import lvesp32
 import micropython
 import gc
-from m5stack import M5Stack
 from utime import sleep_ms
 
 micropython.alloc_emergency_exception_buf(256)
@@ -60,7 +59,7 @@ class ili9XXX:
 
     def __init__(
         self,
-        m5stack=M5Stack(),
+        m5stack,
         miso=5,
         mosi=18,
         clk=19,
@@ -80,9 +79,11 @@ class ili9XXX:
         double_buffer=True,
         half_duplex=True,
         display_type=0,
+        debug=False,
     ):
 
         # Initializations
+        self.debug = debug
 
         self.width = width
         self.height = height
@@ -116,9 +117,11 @@ class ili9XXX:
         )
 
         if self.buf1 and self.buf2:
-            print("Double buffer")
+            if self.debug:
+                print("Double buffer")
         elif self.buf1:
-            print("Single buffer")
+            if self.debug:
+                print("Single buffer")
         else:
             raise RuntimeError("Not enough DMA-able memory to allocate display buffer")
 
@@ -249,8 +252,8 @@ class ili9XXX:
     trans_result_ptr = esp.C_Pointer()
 
     def deinit(self):
-
-        print("Deinitializing {}..".format(self.display_name))
+        if self.debug:
+            print("Deinitializing {}..".format(self.display_name))
 
         # Prevent callbacks to lvgl, which refer to the buffers we are about to delete
 
@@ -361,8 +364,8 @@ class ili9XXX:
                 self.send_data(cmd["data"])
             if "delay" in cmd:
                 sleep_ms(cmd["delay"])
-
-        print("{} initialization completed".format(self.display_name))
+        if self.debug:
+            print("{} initialization completed".format(self.display_name))
 
         # Enable backlight
 
@@ -471,6 +474,7 @@ class ili9342(ili9XXX):
         invert=True,
         double_buffer=True,
         half_duplex=True,
+        debug=False,
     ):
 
         # Make sure Micropython was built such that color won't require processing before DMA
@@ -490,9 +494,9 @@ class ili9342(ili9XXX):
             {"cmd": 0xCB, "data": bytes([0x39, 0x2C, 0x00, 0x34, 0x02])},
             {"cmd": 0xF7, "data": bytes([0x20])},
             {"cmd": 0xEA, "data": bytes([0x00, 0x00])},
-            {"cmd": 0xC0, "data": bytes([0x26])},  # Power control
-            {"cmd": 0xC1, "data": bytes([0x11])},  # Power control
-            {"cmd": 0xC5, "data": bytes([0x35, 0x3E])},  # VCOM control
+            {"cmd": 0xC0, "data": bytes([0x12, 0x12])},  # Power control
+            {"cmd": 0xC1, "data": bytes([0x03])},  # Power control
+            {"cmd": 0xC5, "data": bytes([0xF0])},  # VCOM control
             {"cmd": 0xC7, "data": bytes([0xBE])},  # VCOM control
             # Memory Access Control
             {"cmd": 0x36, "data": bytes([rot | colormode])},
@@ -505,21 +509,21 @@ class ili9342(ili9XXX):
                 "cmd": 0xE0,
                 "data": bytes(
                     [
-                        0x1F,
-                        0x1A,
-                        0x18,
-                        0x0A,
-                        0x0F,
-                        0x06,
-                        0x45,
-                        0x87,
-                        0x32,
-                        0x0A,
-                        0x07,
-                        0x02,
-                        0x07,
-                        0x05,
                         0x00,
+                        0x0C,
+                        0x11,
+                        0x04,
+                        0x11,
+                        0x08,
+                        0x37,
+                        0x89,
+                        0x4C,
+                        0x06,
+                        0x0C,
+                        0x0A,
+                        0x2E,
+                        0x34,
+                        0x0F,
                     ]
                 ),
             },
@@ -528,20 +532,20 @@ class ili9342(ili9XXX):
                 "data": bytes(
                     [
                         0x00,
-                        0x25,
-                        0x27,
+                        0x0B,
+                        0x11,
                         0x05,
-                        0x10,
+                        0x13,
                         0x09,
-                        0x3A,
-                        0x78,
-                        0x4D,
-                        0x05,
-                        0x18,
-                        0x0D,
-                        0x38,
-                        0x3A,
-                        0x1F,
+                        0x33,
+                        0x67,
+                        0x48,
+                        0x07,
+                        0x0E,
+                        0x0B,
+                        0x2E,
+                        0x33,
+                        0x0F,
                     ]
                 ),
             },
@@ -549,7 +553,7 @@ class ili9342(ili9XXX):
             {"cmd": 0x2B, "data": bytes([0x00, 0x00, 0x01, 0x3F])},
             {"cmd": 0x2C, "data": bytes([0])},
             {"cmd": 0xB7, "data": bytes([0x07])},
-            {"cmd": 0xB6, "data": bytes([0x0A, 0x82, 0x27, 0x00])},
+            {"cmd": 0xB6, "data": bytes([0x0A, 0xE0, 0x1D, 0x04])},
             {"cmd": 0x11, "data": bytes([0]), "delay": 100},
             {"cmd": 0x29, "data": bytes([0]), "delay": 100},
         ]
@@ -574,4 +578,5 @@ class ili9342(ili9XXX):
             invert,
             double_buffer,
             half_duplex,
+            debug,
         )
