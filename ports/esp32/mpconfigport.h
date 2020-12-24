@@ -126,7 +126,6 @@
 #define MICROPY_PY_THREAD_GIL_VM_DIVISOR    (32)
 
 // extended modules
-#define MICROPY_PY_LVGL                     (1)
 #define MICROPY_PY_UASYNCIO                 (1)
 #define MICROPY_PY_UCTYPES                  (1)
 #define MICROPY_PY_UZLIB                    (1)
@@ -165,10 +164,12 @@
 #define MICROPY_PY_BLUETOOTH_RANDOM_ADDR    (1)
 #define MICROPY_PY_BLUETOOTH_DEFAULT_GAP_NAME ("ESP32")
 
+#if MICROPY_LVGL_ENABLE
 #define MICROPY_PY_LVGL                     (1)
 #define MICROPY_PY_ESPIDF                   (1)
 #define MICROPY_PY_LODEPNG                  (1)
 #define MICROPY_PY_RTCH                     (1)
+#endif
 
 // fatfs configuration
 #define MICROPY_FATFS_ENABLE_LFN            (1)
@@ -197,12 +198,14 @@ extern const struct _mp_obj_module_t mp_module_usocket;
 extern const struct _mp_obj_module_t mp_module_machine;
 extern const struct _mp_obj_module_t mp_module_network;
 extern const struct _mp_obj_module_t mp_module_onewire;
+#if MICROPY_PY_LVGL
 extern const struct _mp_obj_module_t mp_module_lvgl;
 extern const struct _mp_obj_module_t mp_module_espidf;
 extern const struct _mp_obj_module_t mp_module_lvesp32;
 extern const struct _mp_obj_module_t mp_module_rtch;
 extern const struct _mp_obj_module_t mp_module_lodepng;
 extern const struct _mp_obj_module_t mp_module_ILI9341;
+#endif
 
 #if MICROPY_PY_LVGL
 #define MICROPY_PORT_LVGL_DEF \
