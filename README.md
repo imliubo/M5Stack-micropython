@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/imliubo/M5Stack-micropython.svg?branch=master)](https://travis-ci.com/imliubo/M5Stack-micropython) [![Coverage Status](https://coveralls.io/repos/github/imliubo/M5Stack-micropython/badge.svg?branch=master)](https://coveralls.io/github/imliubo/M5Stack-micropython?branch=master)
+[![CI badge](https://github.com/imliubo/M5Stack-micropython/workflows/esp32%20port/badge.svg)](https://github.com/imliubo/M5Stack-micropython/actions?query=branch%3Amaster+event%3Apush) [![Coverage badge](https://coveralls.io/repos/imliubo/M5Stack-micropython/badge.png?branch=master)](https://coveralls.io/r/imliubo/M5Stack-micropython?branch=master)
 
 The MicroPython for M5Stack project
 ===================================
