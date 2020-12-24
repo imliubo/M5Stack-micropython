@@ -23,8 +23,8 @@ SOFTWARE.
 """
 from axp192 import AXP192
 import lvgl as lv
-from ft6336u import ft6336u
-from axpili9342 import ili9342
+from ft63xx import FT6336U
+from ili9xxx import ILI9342
 from imagetools import get_png_info, open_png
 
 
@@ -39,8 +39,8 @@ class M5Stack(object):
 
         self.lv = lv
         self.lv.init()
-        self.disp = ili9342(self)  # init LCD
-        self.touch = ft6336u()  # init TOUCH
+        self.disp = ILI9342(self)  # init LCD
+        self.touch = FT6336U()  # init TOUCH
 
         decoder = lv.img.decoder_create()
         decoder.info_cb = get_png_info

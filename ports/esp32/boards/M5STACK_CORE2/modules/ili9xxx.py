@@ -17,7 +17,7 @@
 # Pure Micropython could be viable when ESP32 supports Viper code emitter.
 #
 ###############################################################################
-
+from micropython import const
 import espidf as esp
 import lvgl as lv
 import lvesp32
@@ -43,11 +43,10 @@ LANDSCAPE = MADCTL_ML
 
 DISPLAY_TYPE_ILI9341 = const(1)
 DISPLAY_TYPE_ILI9488 = const(2)
+TRANS_BUFFER_LEN = const(16)
 
 
-class ili9XXX:
-
-    TRANS_BUFFER_LEN = const(16)
+class ILI9XXX:
 
     display_name = "ili9XXX"
     display_type = 0
@@ -452,7 +451,7 @@ class ili9XXX:
         return time, setup, dma, px
 
 
-class ili9342(ili9XXX):
+class ILI9342(ILI9XXX):
     def __init__(
         self,
         m5stack,

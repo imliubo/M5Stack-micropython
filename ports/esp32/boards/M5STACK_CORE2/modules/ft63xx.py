@@ -7,7 +7,7 @@ FT_ADDR = const(0x38)
 FT_INT_PIN = const(39)
 
 
-class ft6336u:
+class FT6336U:
     def __init__(self):
 
         # Initializations
